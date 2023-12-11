@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="referrer" content="never">
+    <title>DDTV_WebUI</title>
+    <base href="/" />
+    <link href="_content/Masa.Blazor/css/masa-blazor.min.css" rel="stylesheet" />
+    <link href="css/app.css" rel="stylesheet" />
+    <link href="https://cdn.masastack.com/npm/@mdi/font@7.1.96/css/materialdesignicons.min.css" rel="stylesheet">
+    <!-- If you add any scoped CSS files, uncomment the following to load them-->
+    <link href="DDTV_WebUI.styles.css" rel="stylesheet" />
+    <script src="_content/BlazorComponent/js/blazor-component.js"></script>
+
+</head>
+
+<body>
+    <div id="app">
+        <div id="CenterBox">
+            <p id="ddtvload">
+                dDDD
+            </p>
+            <p>
+                DDtv Dash boarD by blazor
+            </p>
+            <p id="pct"></p>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script>
+        var id = setInterval(frame, 450);
+        var conter = 0;
+
+        function frame() {
+            if (document.documentElement.style.getPropertyValue('--blazor-load-percentage') === '100%') {
+                clearInterval(id)
+            } else {
+                var load = document.getElementById("ddtvload");
+                if (conter <= 4) {
+                    var i = load.innerText.indexOf('d');
+                    if (i >= 3) {
+                        load.innerText = "DDDD";
+                    } else {
+                        load.innerText = load.innerText.replace("dD", "Dd");
+                    }
+                } else if (conter === 8) {
+                    load.innerText = "dDDD";
+                    conter = 0;
+                }
+                document.getElementById("pct").innerText = document.documentElement.style.getPropertyValue('--blazor-load-percentage');
+                conter = conter + 1;
+            }
+        }
+    </script>
+
+</body>
+
+</html>

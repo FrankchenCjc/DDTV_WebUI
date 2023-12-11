@@ -1,0 +1,71 @@
+@inject MasaBlazor MasaBlazor
+<MList>
+    <MListItem>
+        <MListItemAvatar Tile>
+            <MImage Contain Src="static/DDTV.png" Width="40"></MImage>
+        </MListItemAvatar>
+        <MListItemTitle>
+            DDTV Dash boraD
+        </MListItemTitle>
+        <MListItemSubtitle hidden>
+            于 @GlobalVal.GConfig.ServerURL
+        </MListItemSubtitle>
+    </MListItem>
+    <MDivider></MDivider>
+</MList>
+<MList Nav Dense Routable>
+    <MListItem Href="" Class="ms-1">
+        <MListItemIcon>
+            <MIcon>mdi-view-dashboard</MIcon>
+        </MListItemIcon>
+        <MListItemContent>
+            <MListItemTitle>汇总</MListItemTitle>
+        </MListItemContent>
+    </MListItem>
+    <MListItem Href="Rec" Class="ms-1">
+        <MListItemIcon>
+            <MIcon>mdi-record</MIcon>
+        </MListItemIcon>
+        <MListItemContent>
+            录制
+        </MListItemContent>
+    </MListItem>
+    <MListItem Href="Rooms" Class="ms-1">
+        <MListItemIcon>
+            <MIcon>mdi-laptop-account</MIcon>
+        </MListItemIcon>
+        <MListItemContent>
+            直播间
+        </MListItemContent>
+    </MListItem>
+    <MListItem Href="Config" Class="ms-1">
+        <MListItemIcon>
+            <MIcon>mdi-tune</MIcon>
+        </MListItemIcon>
+        <MListItemContent>
+            服务器设置
+        </MListItemContent>
+    </MListItem>
+    <MSpacer></MSpacer>
+    <MListItem Class="ms-1" OnClick="ColorChange">
+        <MListItemIcon>
+            <MIcon Icon=@(IsDark ? "mdi-sun" : "mdi-moon")></MIcon>
+        </MListItemIcon>
+        <MListItemContent>
+            @(IsDark ? "暗色模式" : "亮色模式")
+        </MListItemContent>
+    </MListItem>
+</MList>
+@code {
+    private bool IsDark = false;
+    protected override Task OnInitializedAsync()
+    {
+        IsDark = MasaBlazor?.Theme?.Dark ?? false;
+        return base.OnInitializedAsync();
+    }
+    private void ColorChange()
+    {
+        IsDark = !IsDark;
+        MasaBlazor.ToggleTheme();
+    }
+}

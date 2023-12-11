@@ -1,0 +1,310 @@
+@page "/Rooms"
+@inject IPopupService PopupService
+@inject NavigationManager nav
+
+<p style="font-size: xx-large;">房间共 @infos.Count 个</p>
+
+@* TODO：筛选功能和高级管理功能 *@
+
+<MList>
+    <MListItem>
+        <MListItemAvatar Height="60" Width="60">
+            <MIcon>mdi-account-multiple-plus-outline</MIcon>
+        </MListItemAvatar>
+        <MListItemContent>
+            <MListItemTitle>
+                新增房间
+            </MListItemTitle>
+            <MForm @ref="_from" Model="model" EnableValidation Class="d-flex">
+                <MListItemSubtitle>
+                    <MCard MaxWidth="300" Flat Tile Class="d-flex">
+                        <MTextField Label="UID" @bind-Value="@(model.insetUID)" OnChange=@((long _)=>_from.Validate())>
+                        </MTextField>
+                    </MCard>
+                </MListItemSubtitle>
+                <MListItemAction>
+                    <MSwitch Class="mx-2 align-center" Inset @bind-Value=@model.isNewRec>
+                        <LabelContent>
+                            自动录制
+                        </LabelContent>
+                    </MSwitch>
+                    <MSwitch Class="mx-2 align-center" Inset @bind-Value=@model.isNewRecDan Disabled=@(!model.isNewRec)>
+                        <LabelContent>录制弹幕</LabelContent>
+                    </MSwitch>
+                    <MButton Class="mx-2 align-center" Outlined Text OnClick="addroom">新增房间</MButton>
+                </MListItemAction>
+            </MForm>
+
+        </MListItemContent>
+    </MListItem>
+    @foreach (DDTVServer.RoomDetail room in infos)
+    {
+        <MDivider Inset></MDivider>
+        <MListItem>
+            <MListItemAvatar Height="60" Width="60">
+                <MImage Src=@room.face Contain Width="60" Class="elevation-6"></MImage>
+            </MListItemAvatar>
+            <MListItemContent>
+                <MListItemTitle>
+                    @room.uname
+                </MListItemTitle>
+                <MListItemSubtitle>
+                    @foreach (var tag in gettags(room))
+                    {
+                        <MChip Small Outlined Color="primary" Class="ms-1">@tag</MChip>
+                    }
+                    @if (room.live_status == 1)
+                    {
+                        <MChip Small Outlined Color="warning" OnClick="@(_=>nav.NavigateTo(room.url))" Class="ms-1">
+                            <MIcon>mdi-play</MIcon>
+                            正在直播
+                        </MChip>
+                    }
+                </MListItemSubtitle>
+            </MListItemContent>
+            <MListItemAction>
+                <MSwitch Class="mx-2 align-center" Inset @bind-Value=room.IsAutoRec
+                    OnChange="(bool i)=>autoRecChange(room.uid,i)">
+                    <LabelContent>
+                        自动录制
+                    </LabelContent>
+                </MSwitch>
+                <MSwitch Class="mx-2 align-center" Inset @bind-Value=room.IsRecDanmu
+                    OnChange="(bool i)=>recDanmuChange(room.uid,i)" Disabled=!room.IsAutoRec>
+                    <LabelContent>录制弹幕</LabelContent>
+                </MSwitch>
+
+                <PDrawer Title=@(room.uname+"的直播间详细信息") OnCancel="()=>{}" OnDelete="(_)=>delroom(room.uid)">
+                    <ActivatorContent>
+                        <MButton Class="mx-2 align-center" Outlined Text @attributes="context.Attrs">房间详情</MButton>
+                    </ActivatorContent>
+                    <ChildContent>
+                        <MDescriptions Vertical Bordered Class="ms-2">
+                            <MDescriptionsItem Label="UID">@room.uid </MDescriptionsItem>
+                            <MDescriptionsItem Label="直播间号" Span="2">
+                                @(
+                                    room.room_id.ToString() +
+                                    (
+                                    room.short_id != 0
+                                    ? ('(' + room.short_id.ToString() + ')')
+                                    : string.Empty
+                                    )
+                                    )
+                            </MDescriptionsItem>
+                            <MDescriptionsItem Label="分区（分区号）">@room.area_name (@room.area)</MDescriptionsItem>
+                            <MDescriptionsItem Label="二级分区" Span="2">@room.area_v2_parent_name / @room.area_v2_name
+                            </MDescriptionsItem>
+                            <MDescriptionsItem Label="轮播状态">@(room.roundStatus == 0 ? "未轮播" : "正在轮播")
+                            </MDescriptionsItem>
+                            <MDescriptionsItem Label="等级">@room.level</MDescriptionsItem>
+                            <MDescriptionsItem Label="关注数">@room.attention</MDescriptionsItem>
+                            <MDescriptionsItem Label="房间描述" Span="3">@room.description</MDescriptionsItem>
+                            <MDescriptionsItem Label="个人描述" Span="3">@room.sign</MDescriptionsItem>
+                        </MDescriptions>
+                        @if (room.DownloadedFileInfo?.AfterRepairFiles != null &&
+                       room?.DownloadedFileInfo?.AfterRepairFiles.Count != 0)
+                        {
+                            <MList>
+                                <MListItemTitle>上次的下载记录</MListItemTitle>
+                                @foreach (var log in room.DownloadedFileInfo.AfterRepairFiles)
+                                {
+                                    <MListItem>
+                                        <MListItemTitle>
+                                            第
+                                            @(room.DownloadedFileInfo.AfterRepairFiles.IndexOf(log))
+                                            个文件:
+                                            @(log.Name)
+                                        </MListItemTitle>
+                                        <MListItemContent>
+                                            创建时间：
+                                            @(log.CreationTime.ToString())
+                                        </MListItemContent>
+                                    </MListItem>
+                                }
+                            </MList>
+
+                        }
+                        @if (room.DownloadedLog != null && room.DownloadedLog?.Count != 0)
+                        {
+                            <MList>
+                                <MListItemTitle>下载记录</MListItemTitle>
+                                @foreach (var log in room.DownloadedLog)
+                                {
+                                    <MListItem>
+                                        <MListItemTitle>
+                                            第
+                                            @(room.DownloadedLog.IndexOf(log))
+                                            个记录，标题：
+                                            @(log.Title)
+                                        </MListItemTitle>
+                                        <MListItemSubtitle>
+                                            记录结束时间：
+                                            @(log.EndTime)
+                                        </MListItemSubtitle>
+                                        <MListItemContent>
+                                            共
+                                            @(log.TotalDownloadCount / 8589934592)
+                                            MB
+                                        </MListItemContent>
+                                    </MListItem>
+                                }
+                            </MList>
+                        }
+                    </ChildContent>
+                    <DeleteContent Context="delete">
+                        <MButton Outlined Color="error" OnClick="delete.Click" Disabled="delete.Loading">
+                            <MIcon>mdi-delete</MIcon>
+                            删除房间
+                        </MButton>
+                    </DeleteContent>
+                    <CancelContent Context="cancel">
+                        <MButton Outlined Color="success" OnClick="cancel.Click" Disabled="cancel.Loading">
+                            <MIcon>mdi-cancel</MIcon>
+                            取消
+                        </MButton>
+
+                    </CancelContent>
+                </PDrawer>
+            </MListItemAction>
+        </MListItem>
+    }
+</MList>
+
+
+@code {
+    private bool fb = true;
+    private string ocrec = string.Empty;
+    private string ocdmu = string.Empty;
+    private List<DDTVServer.RoomDetail> infos = new();
+
+    private class _model
+    {
+        [System.ComponentModel.DataAnnotations.Required]
+        public long insetUID;
+        [System.ComponentModel.DataAnnotations.Required]
+        public bool isNewRec = true;
+        [System.ComponentModel.DataAnnotations.Required]
+        public bool isNewRecDan = false;
+
+    }
+    private _model model = new();
+    private MForm _from = new();
+
+    private async void delroom(long uid)
+    {
+        try
+        {
+            var i = await GlobalVal.DDTV_server.DelRoom(uid);
+            if (i.code == DDTVServer.Code.Success)
+            {
+                await PopupService.EnqueueSnackbarAsync(i.data, AlertTypes.Success);
+            }
+            infos = (await GlobalVal.DDTV_server.GetAllRoomDetail()).data;
+
+        }
+        catch (Exception ex)
+        {
+            await PopupService.EnqueueSnackbarAsync(ex.Message, AlertTypes.Error);
+            StateHasChanged();
+        }
+    }
+    private async void addroom()
+    {
+        try
+        {
+            if ((await GlobalVal.DDTV_server.AddRoom(model.insetUID)).code != DDTVServer.Code.Success)
+            {
+                throw new Exception("未成功添加房间");
+            }
+            else if ((await GlobalVal.DDTV_server.SetAutoRec(model.insetUID, model.isNewRec)).code != DDTVServer.Code.Success)
+            {
+                throw new Exception("未成功添加房间");
+            }
+            else if ((await GlobalVal.DDTV_server.SetRecDanmu(model.insetUID, model.isNewRecDan)).code != DDTVServer.Code.Success)
+            {
+                throw new Exception("未成功添加房间");
+            }
+            else
+            {
+                infos = (await GlobalVal.DDTV_server.GetAllRoomDetail()).data;
+                StateHasChanged();
+                await PopupService.EnqueueSnackbarAsync(new SnackbarOptions("添加房间完成", AlertTypes.Success));
+            }
+        }
+        catch (Exception ex)
+        {
+            await PopupService.EnqueueSnackbarAsync(new SnackbarOptions(ex.Message, AlertTypes.Error));
+        }
+
+    }
+
+    private class RoomChange
+    {
+        string UID { get; set; } = "0";
+        string Key { get; set; } = string.Empty;
+        bool Value { get; set; } = true;
+    }
+
+    private List<string> gettags(DDTVServer.RoomDetail room)
+    {
+        string[] l = { };
+        if (room.IsAutoRec) l = l.Append("自动录播");
+        if (room.IsRecDanmu) l = l.Append("录制弹幕");
+        var t = room.tags.Split(',');
+        if (t.Length != 1 || string.Empty != t?[0]) t?.ForEach(i => l.Append(i));
+        return l.ToList();
+    }
+    private async void autoRecChange(long uid, bool Value)
+    {
+        ocrec = uid.ToString();
+        try
+        {
+            var i = await GlobalVal.DDTV_server.SetAutoRec(uid, Value);
+            var infos = (await
+            GlobalVal.DDTV_server.GetAllRoomDetail()).data;
+            StateHasChanged();
+            await PopupService.EnqueueSnackbarAsync(new SnackbarOptions(i.data, AlertTypes.Success));
+        }
+        catch (Exception ex)
+        {
+            await PopupService.EnqueueSnackbarAsync(new SnackbarOptions($"出现错误\n{ex.Message}\n{ex}", AlertTypes.Success));
+            infos = infos.Select(i =>
+            {
+                if (i.uid == uid) i.IsAutoRec = !i.IsAutoRec;
+                return i;
+            }).ToList();
+        }
+        ocrec = string.Empty;
+    }
+
+    private async void recDanmuChange(long uid, bool Value)
+    {
+        try
+        {
+            var i = await GlobalVal.DDTV_server.SetRecDanmu(uid, Value);
+            infos = (await
+            GlobalVal.DDTV_server.GetAllRoomDetail()).data;
+            StateHasChanged();
+            await PopupService.EnqueueSnackbarAsync(new SnackbarOptions(i.data, AlertTypes.Success));
+        }
+        catch (Exception ex)
+        {
+            await PopupService.EnqueueSnackbarAsync(new SnackbarOptions($"出现错误\n{ex.Message}\n{ex}", AlertTypes.Success));
+            infos = infos.Select(i =>
+            {
+                if (i.uid == uid) i.IsRecDanmu = !i.IsAutoRec;
+                return i;
+            }).ToList();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        infos = (await
+        GlobalVal.DDTV_server.GetAllRoomDetail()).data;
+        GlobalVal.TimeEvent = null;
+        if (fb)
+            GlobalVal.SetClock();
+        fb = false;
+    }
+}
