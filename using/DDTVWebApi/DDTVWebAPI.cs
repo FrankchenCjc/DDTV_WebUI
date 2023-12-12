@@ -8,8 +8,8 @@ namespace DDTVWebAPI
     {
         readonly SHA1 _sha = SHA1.Create();
         private HttpClient _client = new();
-		private HttpRequestMessage _mas = new();
-		public string ServerURL { get; private set; } = string.Empty;
+        private HttpRequestMessage _mas = new();
+        public string ServerURL { get; private set; } = string.Empty;
         public string AccessKeyID { get; private set; } = string.Empty;
         public string AccessKeySecret { get; private set; } = string.Empty;
         public string Cookies { get; private set; } = string.Empty;
@@ -38,23 +38,23 @@ namespace DDTVWebAPI
                 .ForEach((i) => valuePairs.Add(i.Key, i.Value));
             FormUrlEncodedContent from = new(valuePairs);
             //请求并逆序列化
-            var jss = 
+            var jss =
                 await (await _client.PostAsync(valuePairs.GetValueOrDefault("cmd"), from))
                 .Content
                 .ReadAsStringAsync();
             //回传结果
             return JsonSerializer.Deserialize<Pack<T>>(jss) ?? throw new RequstException("空结果", Code.NotUsed);
-		}
+        }
 
         private async Task<Pack<T>> _CookiesPostAsync<T>(string ApiCmd, Dictionary<string, string>? Selfval)
         {
             _mas.RequestUri = new Uri(ApiCmd);
-            var jss = 
-                await(await _client.SendAsync(_mas))
+            var jss =
+                await (await _client.SendAsync(_mas))
                 .Content
                 .ReadAsStringAsync();
-           return JsonSerializer.Deserialize<Pack<T>>(jss)?? throw new RequstException ("空结果",Code.NotUsed);
-		}
+            return JsonSerializer.Deserialize<Pack<T>>(jss) ?? throw new RequstException("空结果", Code.NotUsed);
+        }
 
         private async Task<Pack<T>> PostAsync<T>(string ApiCmd, Dictionary<string, string>? Selfval)
         {
@@ -74,19 +74,19 @@ namespace DDTVWebAPI
         {
             if (!ApiLogin)
             {
-				Cookies = (await _CookiesPostAsync<string>("login", new Dictionary<string, string> { { "UserName", name }, { "Password", paddword } })).data;
-				_mas.Headers.Add("Cookie", Cookies);
-			}
-			else throw new NotLoginException("非Cookies登录");
+                Cookies = (await _CookiesPostAsync<string>("login", new Dictionary<string, string> { { "UserName", name }, { "Password", paddword } })).data;
+                _mas.Headers.Add("Cookie", Cookies);
+            }
+            else throw new NotLoginException("非Cookies登录");
         }
 
-		/// <summary>
-		/// 使用url，AccessKeyID，和ServerBaseURL，使用API注册到一个服务器
-		/// </summary>
-		/// <param name="serverurl">这个api不包含/api目录，请包含api目录避免问题</param>
-		/// <param name="ID">AccessKeyID或者用户名</param>
-		/// <param name="Verif">AccessKeySecret或者密码</param>
-		public DDTVServer(string serverurl, string ID, string Verif)
+        /// <summary>
+        /// 使用url，AccessKeyID，和ServerBaseURL，使用API注册到一个服务器
+        /// </summary>
+        /// <param name="serverurl">这个api不包含/api目录，请包含api目录避免问题</param>
+        /// <param name="ID">AccessKeyID或者用户名</param>
+        /// <param name="Verif">AccessKeySecret或者密码</param>
+        public DDTVServer(string serverurl, string ID, string Verif)
         {
             ServerURL = serverurl;
             AccessKeyID = ID;
@@ -100,7 +100,7 @@ namespace DDTVWebAPI
         public DDTVServer(string serverurl)
         {
             ServerURL = serverurl;
-			ApiLogin = false;
-		}
+            ApiLogin = false;
+        }
     }
 }

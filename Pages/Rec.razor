@@ -2,12 +2,10 @@
 @inject NavigationManager nav
 @inject IPopupService PopupService
 
-
-
 <MCardTitle>正在下载中的任务</MCardTitle>
-<MCardSubtitle>共 @DownloadingList.Count 个</MCardSubtitle>
+<MCardSubtitle>共 @Isd().Count 个</MCardSubtitle>
 
-<MDataTable HideDefaultFooter SingleSelect=false TItem=@DownloadD Items="@DownloadingList" Headers="@DownloadingH">
+<MDataTable HideDefaultFooter SingleSelect=false TItem=@DownloadD Items="@Isd()" Headers="@DownloadingH">
     <ItemColContent>
         @if (context.Header.Value == "actions")
         {
@@ -21,8 +19,8 @@
 </MDataTable>
 
 <MCardTitle>下载完成的任务</MCardTitle>
-<MCardSubtitle>共 @DownloadLog.Count 个</MCardSubtitle>
-<MDataTable ShowSelect SingleSelect=false TItem=@DownloadD Items="@DownloadLog" Headers="@DownloadedH"
+<MCardSubtitle>共 @Isc().Count 个</MCardSubtitle>
+<MDataTable ShowSelect SingleSelect=false TItem=@DownloadD Items="@Isc()" Headers="@DownloadedH"
     ItemKey="r=>r.GetHashCode().ToString()">
     <ItemColContent>
         @if (context.Header.Value == "actions")
@@ -38,7 +36,8 @@
 </MDataTable>
 
 @code {
-
+    Func<List<DownloadD>> Isd = () => DownloadD.Collect(AppEnv.Downloads);
+    Func<List<DownloadD>> Isc = () => DownloadD.Collect(AppEnv.Downloadsc);
     private class DownloadD
     {
         public long Uid { get; set; } = 0;
@@ -74,7 +73,6 @@
             return orign.Select(each => DownloadD.Collect(each)).ToList();
         }
     }
-    private List<DownloadD> DownloadingList = new();
     private List<DataTableHeader<DownloadD>> DownloadingH = new(){
 new(){Text = "主播名",Align= DataTableHeaderAlign.Start,Value = nameof(DownloadD.Unmae)
 },
@@ -85,7 +83,6 @@ new(){Text="录制时长",Value= nameof(DownloadD.TottalTime)},
 new(){Text = "总下载大小(MB)",Value= nameof(DownloadD.TottalDownload)},
 new(){Text="动作",Value= "actions",Sortable=false}
 };
-    private List<DownloadD> DownloadLog = new();
     private List<DataTableHeader<DownloadD>> DownloadedH = new(){
 new(){Text = "主播名",Align= DataTableHeaderAlign.Start,Value = nameof(DownloadD.Unmae)
 },
@@ -99,37 +96,16 @@ new(){Text="动作",Value= "actions",Sortable=false}
 
     private async void CancleRec(long uid)
     {
-        try
-        {
-            var i = await GlobalVal.DDTV_server.CancelDownload(uid);
-            if (i.code == DDTVServer.Code.Success)
-            {
-                await PopupService.EnqueueSnackbarAsync(new SnackbarOptions(i.data, AlertTypes.Success));
-            }
-            DownloadingList = DownloadD.Collect((await GlobalVal.DDTV_server.GetAllRecordingInfo()).data);
-            DownloadLog = DownloadD.Collect((await GlobalVal.DDTV_server.GetAllRecordCompleteInfo()).data);
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            await PopupService.EnqueueSnackbarAsync(new SnackbarOptions(ex.Message, AlertTypes.Error));
-        }
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
 #if !DEBUG
         try
         {
 #endif
-            DownloadingList = DownloadD.Collect((await GlobalVal.DDTV_server.GetAllRecordingInfo()).data);
-            DownloadLog = DownloadD.Collect((await GlobalVal.DDTV_server.GetAllRecordCompleteInfo()).data); GlobalVal.TimeEvent =
-            (_, _) =>
+            var i = await AppEnv.Dserver.CancelDownload(uid);
+            if (i.code == DDTVServer.Code.Success)
             {
-                InvokeAsync(async () => DownloadingList = DownloadD.Collect((await GlobalVal.DDTV_server.GetAllRecordingInfo()).data));
-                InvokeAsync(StateHasChanged);
-            };
-            GlobalVal.SetClock();
+                await PopupService.EnqueueSnackbarAsync(new SnackbarOptions(i.data, AlertTypes.Success));
+            }
+            StateHasChanged();
 #if !DEBUG
         }
         catch (Exception ex)
@@ -137,5 +113,12 @@ new(){Text="动作",Value= "actions",Sortable=false}
             await PopupService.EnqueueSnackbarAsync(ex.Message, AlertTypes.Error);
         }
 #endif
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        lock (AppEnv.ChangeEvent)
+        {
+            AppEnv.ChangeEvent = () => InvokeAsync(StateHasChanged);
+        }
     }
 }

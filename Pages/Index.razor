@@ -4,172 +4,177 @@
 @inject IPopupService PopupService
 
 <p style="font-size: xx-large;">@hello</p>
+<MCardTitle>
+    <p>@AppEnv.SysData.ServerName (@AppEnv.SysData.ServerAID) 服务器状态</p>
+</MCardTitle>
+<MCardSubtitle>
+    <p>服务器地址：@AppEnv.Config.ServerConfig.ServerURL</p>
+</MCardSubtitle>
+<MCardText Class="d-flex flex-row overflow-auto flex-xs-column">
 
-    <MCardTitle>
-        <p>@sysdata.ServerName (@sysdata.ServerAID) 服务器状态</p>
-    </MCardTitle>
-    <MCardSubtitle>
-        <p>服务器地址：@GlobalVal.DDTV_server.ServerURL</p>
-    </MCardSubtitle>
-    <MCardText Class="d-flex flex-row overflow-auto">
+    <MCard Class="ms-2" Width="300" MinWidth="180">
+        <MCardTitle>监控房间数量</MCardTitle>
+        <MCardText>
+            <p class="DataDisplay">@AppEnv.RoomDetails.Count()</p>
+        </MCardText>
+    </MCard>
+    <MCard Class="ms-2" Width="300" MinWidth="180">
+        <MCardTitle>直播中房间数量</MCardTitle>
+        <MCardText>
+            <p class="DataDisplay">@Isl().Count()</p>
+        </MCardText>
+    </MCard>
 
-        <MCard Class="ms-2" Width="300" MinWidth="180">
-            <MCardTitle>监控房间数量</MCardTitle>
-            <MCardText>
-                <p class="DataDisplay">@rooms.Count()</p>
-            </MCardText>
+    <MCard Class="ms-2" Width="300" MinWidth="180">
+        <MCardTitle>正在录制数量</MCardTitle>
+        <MCardText>
+            <p class="DataDisplay">@Isd().Count</p>
+        </MCardText>
+    </MCard>
+
+    <MCard Class="ms-2" Width="300" MinWidth="180">
+        <MCardTitle>CPU使用</MCardTitle>
+        <MCardText>
+            <p class="DataDisplay">@AppEnv.ResourceData.CPU_usage %</p>
+        </MCardText>
+    </MCard>
+
+    <MCard Class="ms-2" Width="300" MinWidth="180">
+        <MCardTitle>内存使用率</MCardTitle>
+        <MCardText>
+            <p class="DataDisplay">@Memu() </p>
+        </MCardText>
+    </MCard>
+</MCardText>
+
+<MCardTitle>正在录制</MCardTitle>
+<MCardSubtitle>
+    共
+    @Isd().Count
+    个房间
+</MCardSubtitle>
+<MCardText Class="d-flex flex-row flex-xs-column overflow-auto">
+    @foreach (DDTVServer.RoomDetail room in Isd())
+    {
+        <MCard Class="ms-3" Width="300">
+            <MListItem TwoLine Href=@room.url>
+                <MListItemAvatar>
+                    <MImage Src=@room.face Contain Width="72"></MImage>
+                </MListItemAvatar>
+                <MListItemContent>
+                    <MListItemTitle>
+                        @room.uname
+                    </MListItemTitle>
+                    <MListItemSubtitle>
+                        @room.title
+                    </MListItemSubtitle>
+                </MListItemContent>
+            </MListItem>
+            <MDivider></MDivider>
+            <MImage Src=@room.cover_from_user Contain Width="300"></MImage>
+            <MDivider></MDivider>
+            <MCardActions>
+                <MButton Color="primary" Rounded Text OnClick=@(_=>nav.NavigateTo(room.url))>
+                    <MIcon>mdi-television</MIcon>
+                    到直播间
+                </MButton>
+                <MButton Color="error" Rounded Text OnClick=@(_=>CancleRec(room.uid))>
+                    <MIcon>mdi-video-off</MIcon>
+                    中断录播
+                </MButton>
+            </MCardActions>
         </MCard>
+    }
+</MCardText>
 
-        <MCard Class="ms-2" Width="300" MinWidth="180">
-            <MCardTitle>正在录制数量</MCardTitle>
-            <MCardText>
-                <p class="DataDisplay">@sysdata.download_Info.Downloading</p>
-            </MCardText>
+<MCardTitle>正在直播</MCardTitle>
+<MCardSubtitle>
+    共
+    @Isl().Count
+    个房间
+</MCardSubtitle>
+<MCardText Class="d-flex flex-row flex-xs-column overflow-auto">
+    @foreach (DDTVServer.RoomDetail room in Isl())
+    {
+        <MCard Class="ms-3" Width="300">
+            <MListItem TwoLine Href=@room.url>
+                <MListItemAvatar>
+                    <MImage Src=@room.face Contain Width="72"></MImage>
+                </MListItemAvatar>
+                <MListItemContent>
+                    <MListItemTitle>
+                        @room.uname
+                    </MListItemTitle>
+                    <MListItemSubtitle>
+                        @room.title
+                    </MListItemSubtitle>
+                </MListItemContent>
+            </MListItem>
+            <MDivider></MDivider>
+            <MImage Src=@room.cover_from_user Contain Width="300"></MImage>
+            <MDivider></MDivider>
+            <MCardActions>
+                <MButton Color="primary" Rounded Text OnClick=@(_=>nav.NavigateTo(room.url))>
+                    <MIcon>mdi-television</MIcon>
+                    到直播间
+                </MButton>
+            </MCardActions>
         </MCard>
-
-        <MCard Class="ms-2" Width="300" MinWidth="180">
-            <MCardTitle>CPU使用</MCardTitle>
-            <MCardText>
-                <p class="DataDisplay">@rdata.CPU_usage</p>
-            </MCardText>
-        </MCard>
-
-        <MCard Class="ms-2" Width="300" MinWidth="180">
-            <MCardTitle>内存使用率</MCardTitle>
-            <MCardText>
-                <p class="DataDisplay">@(rdata.Memory != null ? ((@rdata.Memory.Total -
-                    rdata.Memory.Available) /
-                    @rdata.Memory.Total) : "!NULL!") </p>
-            </MCardText>
-        </MCard>
-
-    </MCardText>
-
-    <MCardTitle>正在录制</MCardTitle>
-    <MCardSubtitle>共 @downing.Count 个房间</MCardSubtitle>
-    <MCardText Class="d-flex flex-row overflow-auto">
-        @foreach (DDTVServer.RoomDetail room in downing)
-        {
-            <MCard Class="ms-3" Width="300">
-                <MListItem TwoLine Href=@room.url>
-                    <MListItemAvatar>
-                        <MImage Src=@room.face Contain Width="72"></MImage>
-                    </MListItemAvatar>
-                    <MListItemContent>
-                        <MListItemTitle>
-                            @room.uname
-                        </MListItemTitle>
-                        <MListItemSubtitle>
-                            @room.title
-                        </MListItemSubtitle>
-                    </MListItemContent>
-                </MListItem>
-                <MDivider></MDivider>
-                <MImage Src=@room.cover_from_user Contain Width="300"></MImage>
-                <MDivider></MDivider>
-                <MCardActions>
-                    <MButton Color="primary" Rounded Text OnClick=@(_=>nav.NavigateTo(room.url))>
-                        <MIcon>mdi-television</MIcon>
-                        到直播间
-                    </MButton>
-                    <MButton Color="error" Rounded Text OnClick=@(_=>CancleRec(room.uid))>
-                        <MIcon>mdi-video-off</MIcon>
-                        中断录播
-                    </MButton>
-                </MCardActions>
-            </MCard>
-        }
-    </MCardText>
-
-    <MCardTitle>正在直播</MCardTitle>
-    <MCardSubtitle>共 @listening.Count 个房间</MCardSubtitle>
-    <MCardText Class="d-flex flex-row overflow-auto">
-        @foreach (DDTVServer.RoomDetail room in listening)
-        {
-            <MCard Class="ms-3" Width="300">
-                <MListItem TwoLine Href=@room.url>
-                    <MListItemAvatar>
-                        <MImage Src=@room.face Contain Width="72"></MImage>
-                    </MListItemAvatar>
-                    <MListItemContent>
-                        <MListItemTitle>
-                            @room.uname
-                        </MListItemTitle>
-                        <MListItemSubtitle>
-                            @room.title
-                        </MListItemSubtitle>
-                    </MListItemContent>
-                </MListItem>
-                <MDivider></MDivider>
-                <MImage Src=@room.cover_from_user Contain Width="300"></MImage>
-                <MDivider></MDivider>
-                <MCardActions>
-                    <MButton Color="primary" Rounded Text OnClick=@(_=>nav.NavigateTo(room.url))>
-                        <MIcon>mdi-television</MIcon>
-                        到直播间
-                    </MButton>
-                </MCardActions>
-            </MCard>
-        }
-    </MCardText>
+    }
+</MCardText>
 
 
 @code {
-    private DDTVServer.SysData sysdata = new();
-    private DDTVServer.ResourceData rdata = new();
-    private List<DDTVServer.RoomDetail> rooms = new();
-    private List<DDTVServer.RoomDetail> downing = new();
-    private List<DDTVServer.RoomDetail> listening = new();
-    private List<DDTVServer.BriefDownloads> ldowning = new();
-    private bool fb = true;
+    Func<List<DDTVServer.RoomDetail>> Isd = () =>
+    AppEnv.Downloads.Select((i) => AppEnv.RoomDetails.First((j) => i.Uid == j.uid))
+    .ToList();
+    Func<List<DDTVServer.RoomDetail>> Isl = () =>
+    AppEnv.RoomDetails.Where((i) => i.live_status == 1 ? true : false)
+    .ToList();
+    Func<string> Memu = () =>
+    AppEnv.ResourceData.Memory != null
+    ? ((1 - (float)AppEnv.ResourceData.Memory.Available / (float)AppEnv.ResourceData.Memory.Total) * 100).ToString("##0.0#")
+    + "%"
+    : "!NULL!";
+
+
     private int timez = -1;
     private Random ran = new();
+    private string hello = string.Empty;
 
     private async void CancleRec(long uid)
     {
+#if !DEBUG
         try
         {
-            var i = await GlobalVal.DDTV_server.CancelDownload(uid);
+#endif
+            var i = await AppEnv.Dserver.CancelDownload(uid);
             if (i.code == DDTVServer.Code.Success)
             {
                 await PopupService.EnqueueSnackbarAsync(new SnackbarOptions(i.data, AlertTypes.Success));
             }
-            jobs();
             StateHasChanged();
+#if !DEBUG
         }
         catch (Exception ex)
         {
             await PopupService.EnqueueSnackbarAsync(new SnackbarOptions(ex.Message, AlertTypes.Error));
         }
+#endif
     }
-    private static string hello = string.Empty;
-    protected async void jobs()
+    protected override async Task OnInitializedAsync()
     {
-        rdata = (await GlobalVal.DDTV_server.GetSystemResourcesInfo()).data;
-        ldowning = (await GlobalVal.DDTV_server.GetBriefRecordingInfo()).data;
-        downing = ldowning.Select((i) => rooms.First((j) => i.Uid == j.uid)).ToList();
-        listening = rooms.Where((i) => i.live_status == 1 ? true : false).ToList();
-        var timea = (int)(((DateTime.Now.Hour + 1) * GlobalVal.GConfig.Greetings.Count() / 24) - 1);
+        var timea = (int)(
+        ((DateTime.Now.Hour) * AppEnv.Config.AppConfig.Greetings.Count())
+        / 24);
         if (timea != timez)
         {
             timez = timea;
-            hello = GlobalVal.GConfig.Greetings[timez][ran.Next(0, (GlobalVal.GConfig.Greetings[timez].Count() - 1))];
+            hello = AppEnv.Config.AppConfig.Greetings[timez][ran.Next(0, (AppEnv.Config.AppConfig.Greetings[timez].Count() - 1))];
         }
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        jobs();
-        sysdata = (await GlobalVal.DDTV_server.GetSystemInfo()).data;
-        rooms = (await GlobalVal.DDTV_server.GetAllRoomDetail()).data;
-
-        GlobalVal.TimeEvent = new((_, _) =>
+        lock (AppEnv.ChangeEvent)
         {
-            InvokeAsync(() => jobs());
-            InvokeAsync(StateHasChanged);
-        });
-        if (fb)
-            GlobalVal.SetClock();
-        fb = false;
+            AppEnv.ChangeEvent = () => InvokeAsync(StateHasChanged);
+        }
     }
 }

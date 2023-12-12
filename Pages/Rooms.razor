@@ -2,7 +2,7 @@
 @inject IPopupService PopupService
 @inject NavigationManager nav
 
-<p style="font-size: xx-large;">房间共 @infos.Count 个</p>
+<p style="font-size: xx-large;">房间共 @AppEnv.RoomDetails.Count 个</p>
 
 @* TODO：筛选功能和高级管理功能 *@
 
@@ -15,29 +15,19 @@
             <MListItemTitle>
                 新增房间
             </MListItemTitle>
-            <MForm @ref="_from" Model="model" EnableValidation Class="d-flex">
-                <MListItemSubtitle>
-                    <MCard MaxWidth="300" Flat Tile Class="d-flex">
-                        <MTextField Label="UID" @bind-Value="@(model.insetUID)" OnChange=@((long _)=>_from.Validate())>
-                        </MTextField>
-                    </MCard>
-                </MListItemSubtitle>
-                <MListItemAction>
-                    <MSwitch Class="mx-2 align-center" Inset @bind-Value=@model.isNewRec>
-                        <LabelContent>
-                            自动录制
-                        </LabelContent>
-                    </MSwitch>
-                    <MSwitch Class="mx-2 align-center" Inset @bind-Value=@model.isNewRecDan Disabled=@(!model.isNewRec)>
-                        <LabelContent>录制弹幕</LabelContent>
-                    </MSwitch>
-                    <MButton Class="mx-2 align-center" Outlined Text OnClick="addroom">新增房间</MButton>
-                </MListItemAction>
-            </MForm>
-
+            <MListItemSubtitle>
+                <MCard MaxWidth="400" Flat Tile Class="d-inline-flex">
+                    <MTextField Label="UID" @bind-Value="@(RoomAddUID)">
+                    </MTextField>
+                </MCard>
+            </MListItemSubtitle>
+            <MListItemAction>
+                <MButton Class="d-inline-flex mx-2 align-center" Outlined Text OnClick="addroom">新增房间
+                </MButton>
+            </MListItemAction>
         </MListItemContent>
     </MListItem>
-    @foreach (DDTVServer.RoomDetail room in infos)
+    @foreach (DDTVServer.RoomDetail room in AppEnv.RoomDetails)
     {
         <MDivider Inset></MDivider>
         <MListItem>
@@ -73,12 +63,15 @@
                     OnChange="(bool i)=>recDanmuChange(room.uid,i)" Disabled=!room.IsAutoRec>
                     <LabelContent>录制弹幕</LabelContent>
                 </MSwitch>
+                <MButton Class="mx-2 align-center" Outlined Text
+                    OnClick="@(_=>nav.NavigateTo("Rooms/"+room.uid.ToString()))">房间详情</MButton>
 
                 <PDrawer Title=@(room.uname+"的直播间详细信息") OnCancel="()=>{}" OnDelete="(_)=>delroom(room.uid)">
                     <ActivatorContent>
                         <MButton Class="mx-2 align-center" Outlined Text @attributes="context.Attrs">房间详情</MButton>
                     </ActivatorContent>
                     <ChildContent>
+                        <MButton OnClick="@(_=>nav.NavigateTo("Rooms/"+room.uid.ToString()))">动态路由</MButton>
                         <MDescriptions Vertical Bordered Class="ms-2">
                             <MDescriptionsItem Label="UID">@room.uid </MDescriptionsItem>
                             <MDescriptionsItem Label="直播间号" Span="2">
@@ -172,77 +165,88 @@
 
 
 @code {
-    private bool fb = true;
     private string ocrec = string.Empty;
     private string ocdmu = string.Empty;
-    private List<DDTVServer.RoomDetail> infos = new();
-
-    private class _model
-    {
-        [System.ComponentModel.DataAnnotations.Required]
-        public long insetUID;
-        [System.ComponentModel.DataAnnotations.Required]
-        public bool isNewRec = true;
-        [System.ComponentModel.DataAnnotations.Required]
-        public bool isNewRecDan = false;
-
-    }
-    private _model model = new();
-    private MForm _from = new();
+    private long RoomAddUID = 0;
 
     private async void delroom(long uid)
     {
+#if !DEBUG
         try
         {
-            var i = await GlobalVal.DDTV_server.DelRoom(uid);
+#endif
+            var i = await AppEnv.Dserver.DelRoom(uid);
             if (i.code == DDTVServer.Code.Success)
             {
                 await PopupService.EnqueueSnackbarAsync(i.data, AlertTypes.Success);
             }
-            infos = (await GlobalVal.DDTV_server.GetAllRoomDetail()).data;
-
+#if !DEBUG
         }
         catch (Exception ex)
         {
             await PopupService.EnqueueSnackbarAsync(ex.Message, AlertTypes.Error);
-            StateHasChanged();
         }
+#endif
     }
     private async void addroom()
     {
+#if !DEBUG
         try
         {
-            if ((await GlobalVal.DDTV_server.AddRoom(model.insetUID)).code != DDTVServer.Code.Success)
-            {
-                throw new Exception("未成功添加房间");
-            }
-            else if ((await GlobalVal.DDTV_server.SetAutoRec(model.insetUID, model.isNewRec)).code != DDTVServer.Code.Success)
-            {
-                throw new Exception("未成功添加房间");
-            }
-            else if ((await GlobalVal.DDTV_server.SetRecDanmu(model.insetUID, model.isNewRecDan)).code != DDTVServer.Code.Success)
+#endif
+            if ((await AppEnv.Dserver.AddRoom(RoomAddUID)).code != DDTVServer.Code.Success)
             {
                 throw new Exception("未成功添加房间");
             }
             else
             {
-                infos = (await GlobalVal.DDTV_server.GetAllRoomDetail()).data;
                 StateHasChanged();
                 await PopupService.EnqueueSnackbarAsync(new SnackbarOptions("添加房间完成", AlertTypes.Success));
             }
+#if !DEBUG
         }
         catch (Exception ex)
         {
-            await PopupService.EnqueueSnackbarAsync(new SnackbarOptions(ex.Message, AlertTypes.Error));
+            await PopupService.EnqueueSnackbarAsync(ex.Message, AlertTypes.Error);
         }
+#endif
 
     }
-
-    private class RoomChange
+    private async void autoRecChange(long uid, bool Value)
     {
-        string UID { get; set; } = "0";
-        string Key { get; set; } = string.Empty;
-        bool Value { get; set; } = true;
+        ocrec = uid.ToString();
+#if !DEBUG
+        try
+        {
+#endif
+            var i = await AppEnv.Dserver.SetAutoRec(uid, Value);
+            await PopupService.EnqueueSnackbarAsync(new SnackbarOptions(i.data, AlertTypes.Success));
+#if !DEBUG
+        }
+        catch (Exception ex)
+        {
+            await PopupService.EnqueueSnackbarAsync(new SnackbarOptions($"出现错误\n{ex.Message}\n{ex}", AlertTypes.Success));
+        }
+#endif
+        ocrec = string.Empty;
+    }
+
+    private async void recDanmuChange(long uid, bool Value)
+    {
+#if !DEBUG
+        try
+        {
+#endif
+            var i = await AppEnv.Dserver.SetRecDanmu(uid, Value);
+            StateHasChanged();
+            await PopupService.EnqueueSnackbarAsync(new SnackbarOptions(i.data, AlertTypes.Success));
+#if !DEBUG
+        }
+        catch (Exception ex)
+        {
+            await PopupService.EnqueueSnackbarAsync(new SnackbarOptions($"出现错误\n{ex.Message}\n{ex}", AlertTypes.Success));
+        }
+#endif
     }
 
     private List<string> gettags(DDTVServer.RoomDetail room)
@@ -254,57 +258,11 @@
         if (t.Length != 1 || string.Empty != t?[0]) t?.ForEach(i => l.Append(i));
         return l.ToList();
     }
-    private async void autoRecChange(long uid, bool Value)
-    {
-        ocrec = uid.ToString();
-        try
-        {
-            var i = await GlobalVal.DDTV_server.SetAutoRec(uid, Value);
-            var infos = (await
-            GlobalVal.DDTV_server.GetAllRoomDetail()).data;
-            StateHasChanged();
-            await PopupService.EnqueueSnackbarAsync(new SnackbarOptions(i.data, AlertTypes.Success));
-        }
-        catch (Exception ex)
-        {
-            await PopupService.EnqueueSnackbarAsync(new SnackbarOptions($"出现错误\n{ex.Message}\n{ex}", AlertTypes.Success));
-            infos = infos.Select(i =>
-            {
-                if (i.uid == uid) i.IsAutoRec = !i.IsAutoRec;
-                return i;
-            }).ToList();
-        }
-        ocrec = string.Empty;
-    }
-
-    private async void recDanmuChange(long uid, bool Value)
-    {
-        try
-        {
-            var i = await GlobalVal.DDTV_server.SetRecDanmu(uid, Value);
-            infos = (await
-            GlobalVal.DDTV_server.GetAllRoomDetail()).data;
-            StateHasChanged();
-            await PopupService.EnqueueSnackbarAsync(new SnackbarOptions(i.data, AlertTypes.Success));
-        }
-        catch (Exception ex)
-        {
-            await PopupService.EnqueueSnackbarAsync(new SnackbarOptions($"出现错误\n{ex.Message}\n{ex}", AlertTypes.Success));
-            infos = infos.Select(i =>
-            {
-                if (i.uid == uid) i.IsRecDanmu = !i.IsAutoRec;
-                return i;
-            }).ToList();
-        }
-    }
-
     protected override async Task OnInitializedAsync()
     {
-        infos = (await
-        GlobalVal.DDTV_server.GetAllRoomDetail()).data;
-        GlobalVal.TimeEvent = null;
-        if (fb)
-            GlobalVal.SetClock();
-        fb = false;
+        lock (AppEnv.ChangeEvent)
+        {
+            AppEnv.ChangeEvent = () => InvokeAsync(StateHasChanged);
+        }
     }
 }

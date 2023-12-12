@@ -9,8 +9,26 @@
             @Body
         </MContainer>
     </MMain>
-
     <MFooter App>
         X备字XXXXXXXXX
     </MFooter>
 </MApp>
+@code
+{
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            AppEnv.SysData = (await AppEnv.Dserver.GetSystemInfo()).data;
+        }
+        catch (DDTVServer.NotLoginException ex)
+        {
+            Console.WriteLine("NOtlogin" + ex.Message);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+            Console.Write(ex.StackTrace);
+        }
+    }
+}
