@@ -10,36 +10,36 @@
 <MCardSubtitle>
     <p>服务器地址：@AppEnv.Config.ServerConfig.ServerURL</p>
 </MCardSubtitle>
-<MCardText Class="d-flex flex-row overflow-auto flex-xs-column">
+<MCardText Class="d-flex flex-column flex-sm-row overflow-auto">
 
-    <MCard Class="ms-2" Width="300" MinWidth="180">
+    <MCard Class="ma-2" Width="300" MinWidth="180">
         <MCardTitle>监控房间数量</MCardTitle>
         <MCardText>
             <p class="DataDisplay">@AppEnv.RoomDetails.Count()</p>
         </MCardText>
     </MCard>
-    <MCard Class="ms-2" Width="300" MinWidth="180">
+    <MCard Class="ma-2" Width="300" MinWidth="180">
         <MCardTitle>直播中房间数量</MCardTitle>
         <MCardText>
             <p class="DataDisplay">@Isl().Count()</p>
         </MCardText>
     </MCard>
 
-    <MCard Class="ms-2" Width="300" MinWidth="180">
+    <MCard Class="ma-2" Width="300" MinWidth="180">
         <MCardTitle>正在录制数量</MCardTitle>
         <MCardText>
             <p class="DataDisplay">@Isd().Count</p>
         </MCardText>
     </MCard>
 
-    <MCard Class="ms-2" Width="300" MinWidth="180">
+    <MCard Class="ma-2" Width="300" MinWidth="180">
         <MCardTitle>CPU使用</MCardTitle>
         <MCardText>
             <p class="DataDisplay">@AppEnv.ResourceData.CPU_usage %</p>
         </MCardText>
     </MCard>
 
-    <MCard Class="ms-2" Width="300" MinWidth="180">
+    <MCard Class="ma-2" Width="300" MinWidth="180">
         <MCardTitle>内存使用率</MCardTitle>
         <MCardText>
             <p class="DataDisplay">@Memu() </p>
@@ -53,11 +53,11 @@
     @Isd().Count
     个房间
 </MCardSubtitle>
-<MCardText Class="d-flex flex-row flex-xs-column overflow-auto">
+<MCardText Class="d-flex flex-column flex-sm-row overflow-auto">
     @foreach (DDTVServer.RoomDetail room in Isd())
     {
-        <MCard Class="ms-3" Width="300">
-            <MListItem TwoLine Href=@room.url>
+        <MCard Class="ma-3" Width="300">
+            <MListItem TwoLine Href=@("https://live.bilibili.com/"+room.room_id.ToString())>
                 <MListItemAvatar>
                     <MImage Src=@room.face Contain Width="72"></MImage>
                 </MListItemAvatar>
@@ -74,7 +74,8 @@
             <MImage Src=@room.cover_from_user Contain Width="300"></MImage>
             <MDivider></MDivider>
             <MCardActions>
-                <MButton Color="primary" Rounded Text OnClick=@(_=>nav.NavigateTo(room.url))>
+                <MButton Color="primary" Rounded Text
+                    OnClick=@(_=>nav.NavigateTo("https://live.bilibili.com/"+room.room_id.ToString()))>
                     <MIcon>mdi-television</MIcon>
                     到直播间
                 </MButton>
@@ -93,10 +94,10 @@
     @Isl().Count
     个房间
 </MCardSubtitle>
-<MCardText Class="d-flex flex-row flex-xs-column overflow-auto">
+<MCardText Class="d-flex flex-column flex-md-row overflow-auto">
     @foreach (DDTVServer.RoomDetail room in Isl())
     {
-        <MCard Class="ms-3" Width="300">
+        <MCard Class="ma-3" Width="300">
             <MListItem TwoLine Href=@room.url>
                 <MListItemAvatar>
                     <MImage Src=@room.face Contain Width="72"></MImage>
@@ -125,17 +126,27 @@
 
 
 @code {
-    Func<List<DDTVServer.RoomDetail>> Isd = () =>
-    AppEnv.Downloads.Select((i) => AppEnv.RoomDetails.First((j) => i.Uid == j.uid))
-    .ToList();
-    Func<List<DDTVServer.RoomDetail>> Isl = () =>
-    AppEnv.RoomDetails.Where((i) => i.live_status == 1 ? true : false)
-    .ToList();
-    Func<string> Memu = () =>
-    AppEnv.ResourceData.Memory != null
-    ? ((1 - (float)AppEnv.ResourceData.Memory.Available / (float)AppEnv.ResourceData.Memory.Total) * 100).ToString("##0.0#")
-    + "%"
-    : "!NULL!";
+    private List<DDTVServer.RoomDetail> Isd()
+    {
+        return
+        AppEnv.Downloads.Select((i) => AppEnv.RoomDetails.First((j) => i.Uid == j.uid))
+        .ToList();
+    }
+
+    private List<DDTVServer.RoomDetail> Isl()
+    {
+        return
+        AppEnv.RoomDetails.Where((i) => i.live_status == 1 ? true : false)
+        .ToList();
+    }
+    private string Memu()
+    {
+        return
+        AppEnv.ResourceData.Memory != null
+        ? ((1 - (float)AppEnv.ResourceData.Memory.Available / (float)AppEnv.ResourceData.Memory.Total) * 100).ToString("##0.0#")
+        + "%"
+        : "!NULL!";
+    }
 
 
     private int timez = -1;

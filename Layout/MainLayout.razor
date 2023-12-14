@@ -1,7 +1,8 @@
 ﻿@inherits LayoutComponentBase
+@inject MasaBlazor MasaBlazor
 
 <MApp id="Page">
-    <MNavigationDrawer App id="SideBar" MiniVariantWidth="60" ExpandOnHover Src="" Bottom Permanent>
+    <MNavigationDrawer App @bind-Value="disp" MiniVariantWidth="60" Bottom>
         <SideBar />
     </MNavigationDrawer>
     <MMain id="MainContent">
@@ -10,11 +11,21 @@
         </MContainer>
     </MMain>
     <MFooter App>
-        X备字XXXXXXXXX
+        <MButton OnClick=@(()=>disp=!disp) Text Outlined>
+            导航
+        </MButton>
+        <div class="d-inline-flex justify-center">
+            X备字XXXXXXXXX
+        </div>
+        <MSpacer></MSpacer>
+        <MButton OnClick=@ColorChange Outlined Text Class="justify-end">
+            黑白模式转换
+        </MButton>
     </MFooter>
 </MApp>
 @code
 {
+    private bool? disp = true;
     protected override async Task OnInitializedAsync()
     {
         try
@@ -30,5 +41,12 @@
             Console.WriteLine(ex.Message);
             Console.Write(ex.StackTrace);
         }
+        IsDark = MasaBlazor?.Theme?.Dark ?? false;
+    }
+    private bool IsDark = false;
+    private void ColorChange()
+    {
+        IsDark = !IsDark;
+        MasaBlazor.ToggleTheme();
     }
 }

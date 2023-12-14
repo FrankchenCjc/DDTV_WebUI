@@ -1,30 +1,149 @@
 @page "/Config"
 
 <p style="font-size: xx-large;">配置</p>
-<MCardText Style="d-flex flex-row">
-    <MCard Style="d-inline-flex" MaxWidth="700">
-        <MCardTitle>
-            服务器配置
-        </MCardTitle>
-        <MCardSubtitle>
-            更改这些配置，请更改DDTV的Config文件
-        </MCardSubtitle>
+<div class="d-flex flex-column flex-md-row">
+    <MCard Class="d-flex d-md-inline-flex ma-2">
         <MCardText>
-
+            <MCardTitle>
+                服务器配置
+            </MCardTitle>
+            <MCardSubtitle>
+                少量配置可更改。<br />要更改全部这些配置，请更改DDTV的Config文件。
+            </MCardSubtitle>
+            <MList>
+            </MList>
         </MCardText>
     </MCard>
-    <MCard Style="d-inline-flex" MaxWidth="700">
-        <MCardTitle>
-            DDDD应用配置
-        </MCardTitle>
-        <MCardSubtitle>
-            要更改这些配置，更改/static/config.js
-        </MCardSubtitle>
+    <MCard Class="d-flex d-md-inline-flex ma-2">
         <MCardText>
-
+            <MCardTitle>
+                DDDD应用配置
+            </MCardTitle>
+            <MCardSubtitle>
+                要更改配置，请更改/static/config.json
+            </MCardSubtitle>
+            <MList>
+                <MListItem>
+                    <MListItemTitle>
+                        @(AppEnv.Config.ServerConfig.IsApiLogin ? "使用API登录" : "使用账户密码登录")
+                    </MListItemTitle>
+                </MListItem>
+                <MListGroup>
+                    <ActivatorContent>
+                        <MListItemTitle>
+                            登录资料
+                        </MListItemTitle>
+                    </ActivatorContent>
+                    <ChildContent>
+                        <MListItem>
+                            <MListItemContent>
+                                <MListItemTitle>
+                                    @(AppEnv.Config.ServerConfig.IsApiLogin ? "AccessSercertID" : "登录名")
+                                </MListItemTitle>
+                                <MListItemSubtitle>
+                                    @(AppEnv.Config.ServerConfig.Ver.Key)
+                                </MListItemSubtitle>
+                            </MListItemContent>
+                        </MListItem>
+                        <MListItem>
+                            <MListItemContent>
+                                <MListItemTitle>
+                                    @(AppEnv.Config.ServerConfig.IsApiLogin ? "AccessSercertKey" : "密码")
+                                </MListItemTitle>
+                                <MListItemSubtitle>
+                                    @(AppEnv.Config.ServerConfig.Ver.Value)
+                                </MListItemSubtitle>
+                            </MListItemContent>
+                        </MListItem>
+                    </ChildContent>
+                </MListGroup>
+                <MListGroup>
+                    <ActivatorContent>
+                        <MListItemTitle>
+                            更新频率
+                        </MListItemTitle>
+                    </ActivatorContent>
+                    <ChildContent>
+                        <MListItem>
+                            <MListItemTitle>时钟频率</MListItemTitle>
+                            <MListItemSubtitle>
+                                @((AppEnv.Config.AppConfig.FlashTimeSpan / 1000).ToString("#0.##"))
+                                (s/次)
+                            </MListItemSubtitle>
+                        </MListItem>
+                        <MListItem>
+                            <MListItemTitle>资源频率</MListItemTitle>
+                            <MListItemSubtitle>
+                                系数
+                                @AppEnv.Config.AppConfig.FlashTimer[0]
+                                即
+                                @(((AppEnv.Config.AppConfig.FlashTimeSpan * AppEnv.Config.AppConfig.FlashTimer[0])
+                                    / 1000).ToString("#0.##"))
+                                (s/次)
+                            </MListItemSubtitle>
+                        </MListItem>
+                        <MListItem>
+                            <MListItemTitle>录制更新频率频率</MListItemTitle>
+                            <MListItemSubtitle>
+                                系数
+                                @AppEnv.Config.AppConfig.FlashTimer[1]
+                                即
+                                @(((AppEnv.Config.AppConfig.FlashTimeSpan * AppEnv.Config.AppConfig.FlashTimer[1])
+                                    / 1000).ToString("#0.##"))
+                                (s/次)
+                            </MListItemSubtitle>
+                        </MListItem>
+                        <MListItem>
+                            <MListItemTitle>房间信息更新频率</MListItemTitle>
+                            <MListItemSubtitle>
+                                系数
+                                @AppEnv.Config.AppConfig.FlashTimer[2]
+                                即
+                                @(((AppEnv.Config.AppConfig.FlashTimeSpan * AppEnv.Config.AppConfig.FlashTimer[2])
+                                    / 1000).ToString("#0.##"))
+                                (s/次)
+                            </MListItemSubtitle>
+                        </MListItem>
+                    </ChildContent>
+                </MListGroup>
+                <MListGroup>
+                    <ActivatorContent>
+                        <MListItemTitle>问候语（Greetings）</MListItemTitle>
+                    </ActivatorContent>
+                    <ChildContent>
+                        @foreach (var i in AppEnv.Config.AppConfig.Greetings)
+                        {
+                            <MListGroup>
+                                <ActivatorContent>
+                                    <MListItemTitle>
+                                        第
+                                        @(AppEnv.Config.AppConfig.Greetings.IndexOf(i) + 1)
+                                        个时间区(
+                                        @(24 *
+                                            AppEnv.Config.AppConfig.Greetings.IndexOf(i) /
+                                            AppEnv.Config.AppConfig.Greetings.Count)
+                                        点到
+                                        @(24 * (AppEnv.Config.AppConfig.Greetings.IndexOf(i) +
+                                            1) / AppEnv.Config.AppConfig.Greetings.Count)
+                                        点)
+                                    </MListItemTitle>
+                                </ActivatorContent>
+                                <ChildContent>
+                                    @foreach (var j in i)
+                                    {
+                                        <MListItem>
+                                            <MListItemSubtitle>@j</MListItemSubtitle>
+                                        </MListItem>
+                                    }
+                                </ChildContent>
+                            </MListGroup>
+                        }
+                    </ChildContent>
+                </MListGroup>
+            </MList>
         </MCardText>
     </MCard>
-</MCardText>
-@code{
-    
+</div>
+@code {
+
 }

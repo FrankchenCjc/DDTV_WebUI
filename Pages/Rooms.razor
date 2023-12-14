@@ -12,19 +12,10 @@
             <MIcon>mdi-account-multiple-plus-outline</MIcon>
         </MListItemAvatar>
         <MListItemContent>
-            <MListItemTitle>
-                新增房间
-            </MListItemTitle>
-            <MListItemSubtitle>
-                <MCard MaxWidth="400" Flat Tile Class="d-inline-flex">
-                    <MTextField Label="UID" @bind-Value="@(RoomAddUID)">
-                    </MTextField>
-                </MCard>
-            </MListItemSubtitle>
-            <MListItemAction>
-                <MButton Class="d-inline-flex mx-2 align-center" Outlined Text OnClick="addroom">新增房间
-                </MButton>
-            </MListItemAction>
+            <MTextField Dense Label="输入UID以增加房间" @bind-Value="@RoomAddUID"
+                AppendOuterIcon=@(RoomAddUID!=0 ? "mdi-plus" : "mdi-close")
+                OnAppendOuterClick="@addroom">
+            </MTextField>
         </MListItemContent>
     </MListItem>
     @foreach (DDTVServer.RoomDetail room in AppEnv.RoomDetails)
@@ -45,7 +36,8 @@
                     }
                     @if (room.live_status == 1)
                     {
-                        <MChip Small Outlined Color="warning" OnClick="@(_=>nav.NavigateTo(room.url))" Class="ms-1">
+                        <MChip Small Outlined Color="warning" 
+                        OnClick="@(_=>nav.NavigateTo("https://live.bilibili.com/"+room.room_id.ToString()))" Class="ms-1">
                             <MIcon>mdi-play</MIcon>
                             正在直播
                         </MChip>
@@ -53,111 +45,24 @@
                 </MListItemSubtitle>
             </MListItemContent>
             <MListItemAction>
-                <MSwitch Class="mx-2 align-center" Inset @bind-Value=room.IsAutoRec
-                    OnChange="(bool i)=>autoRecChange(room.uid,i)">
-                    <LabelContent>
-                        自动录制
-                    </LabelContent>
-                </MSwitch>
-                <MSwitch Class="mx-2 align-center" Inset @bind-Value=room.IsRecDanmu
-                    OnChange="(bool i)=>recDanmuChange(room.uid,i)" Disabled=!room.IsAutoRec>
-                    <LabelContent>录制弹幕</LabelContent>
-                </MSwitch>
-                <MButton Class="mx-2 align-center" Outlined Text
+                <div class="mx-1 align-center">
+                    <MSwitch Class="mx-1 align-center d-none d-md-flex" @bind-Value=room.IsAutoRec
+                        OnChange="(bool i)=>autoRecChange(room.uid,i)">
+                        <LabelContent>
+                            <span class="mx-1">自动录制</span>
+                        </LabelContent>
+                    </MSwitch>
+                </div>
+                <div class="mx-1 align-center">
+                    <MSwitch Class="mx-1 align-center d-none d-md-flex" @bind-Value=room.IsRecDanmu
+                        OnChange="(bool i)=>recDanmuChange(room.uid,i)" Disabled=!room.IsAutoRec>
+                        <LabelContent>
+                            <span class="mx-1">录制弹幕</span>
+                        </LabelContent>
+                    </MSwitch>
+                </div>
+                <MButton Class="mx-1 align-center" Outlined Text
                     OnClick="@(_=>nav.NavigateTo("Rooms/"+room.uid.ToString()))">房间详情</MButton>
-
-                <PDrawer Title=@(room.uname+"的直播间详细信息") OnCancel="()=>{}" OnDelete="(_)=>delroom(room.uid)">
-                    <ActivatorContent>
-                        <MButton Class="mx-2 align-center" Outlined Text @attributes="context.Attrs">房间详情</MButton>
-                    </ActivatorContent>
-                    <ChildContent>
-                        <MButton OnClick="@(_=>nav.NavigateTo("Rooms/"+room.uid.ToString()))">动态路由</MButton>
-                        <MDescriptions Vertical Bordered Class="ms-2">
-                            <MDescriptionsItem Label="UID">@room.uid </MDescriptionsItem>
-                            <MDescriptionsItem Label="直播间号" Span="2">
-                                @(
-                                    room.room_id.ToString() +
-                                    (
-                                    room.short_id != 0
-                                    ? ('(' + room.short_id.ToString() + ')')
-                                    : string.Empty
-                                    )
-                                    )
-                            </MDescriptionsItem>
-                            <MDescriptionsItem Label="分区（分区号）">@room.area_name (@room.area)</MDescriptionsItem>
-                            <MDescriptionsItem Label="二级分区" Span="2">@room.area_v2_parent_name / @room.area_v2_name
-                            </MDescriptionsItem>
-                            <MDescriptionsItem Label="轮播状态">@(room.roundStatus == 0 ? "未轮播" : "正在轮播")
-                            </MDescriptionsItem>
-                            <MDescriptionsItem Label="等级">@room.level</MDescriptionsItem>
-                            <MDescriptionsItem Label="关注数">@room.attention</MDescriptionsItem>
-                            <MDescriptionsItem Label="房间描述" Span="3">@room.description</MDescriptionsItem>
-                            <MDescriptionsItem Label="个人描述" Span="3">@room.sign</MDescriptionsItem>
-                        </MDescriptions>
-                        @if (room.DownloadedFileInfo?.AfterRepairFiles != null &&
-                       room?.DownloadedFileInfo?.AfterRepairFiles.Count != 0)
-                        {
-                            <MList>
-                                <MListItemTitle>上次的下载记录</MListItemTitle>
-                                @foreach (var log in room.DownloadedFileInfo.AfterRepairFiles)
-                                {
-                                    <MListItem>
-                                        <MListItemTitle>
-                                            第
-                                            @(room.DownloadedFileInfo.AfterRepairFiles.IndexOf(log))
-                                            个文件:
-                                            @(log.Name)
-                                        </MListItemTitle>
-                                        <MListItemContent>
-                                            创建时间：
-                                            @(log.CreationTime.ToString())
-                                        </MListItemContent>
-                                    </MListItem>
-                                }
-                            </MList>
-
-                        }
-                        @if (room.DownloadedLog != null && room.DownloadedLog?.Count != 0)
-                        {
-                            <MList>
-                                <MListItemTitle>下载记录</MListItemTitle>
-                                @foreach (var log in room.DownloadedLog)
-                                {
-                                    <MListItem>
-                                        <MListItemTitle>
-                                            第
-                                            @(room.DownloadedLog.IndexOf(log))
-                                            个记录，标题：
-                                            @(log.Title)
-                                        </MListItemTitle>
-                                        <MListItemSubtitle>
-                                            记录结束时间：
-                                            @(log.EndTime)
-                                        </MListItemSubtitle>
-                                        <MListItemContent>
-                                            共
-                                            @(log.TotalDownloadCount / 8589934592)
-                                            MB
-                                        </MListItemContent>
-                                    </MListItem>
-                                }
-                            </MList>
-                        }
-                    </ChildContent>
-                    <DeleteContent Context="delete">
-                        <MButton Outlined Color="error" OnClick="delete.Click" Disabled="delete.Loading">
-                            <MIcon>mdi-delete</MIcon>
-                            删除房间
-                        </MButton>
-                    </DeleteContent>
-                    <CancelContent Context="cancel">
-                        <MButton Outlined Color="success" OnClick="cancel.Click" Disabled="cancel.Loading">
-                            <MIcon>mdi-cancel</MIcon>
-                            取消
-                        </MButton>
-
-                    </CancelContent>
-                </PDrawer>
             </MListItemAction>
         </MListItem>
     }
@@ -165,31 +70,11 @@
 
 
 @code {
-    private string ocrec = string.Empty;
-    private string ocdmu = string.Empty;
-    private long RoomAddUID = 0;
+    private long RoomAddUID ;
 
-    private async void delroom(long uid)
-    {
-#if !DEBUG
-        try
-        {
-#endif
-            var i = await AppEnv.Dserver.DelRoom(uid);
-            if (i.code == DDTVServer.Code.Success)
-            {
-                await PopupService.EnqueueSnackbarAsync(i.data, AlertTypes.Success);
-            }
-#if !DEBUG
-        }
-        catch (Exception ex)
-        {
-            await PopupService.EnqueueSnackbarAsync(ex.Message, AlertTypes.Error);
-        }
-#endif
-    }
     private async void addroom()
     {
+        if(RoomAddUID == 0) return;
 #if !DEBUG
         try
         {
@@ -214,7 +99,6 @@
     }
     private async void autoRecChange(long uid, bool Value)
     {
-        ocrec = uid.ToString();
 #if !DEBUG
         try
         {
@@ -228,7 +112,6 @@
             await PopupService.EnqueueSnackbarAsync(new SnackbarOptions($"出现错误\n{ex.Message}\n{ex}", AlertTypes.Success));
         }
 #endif
-        ocrec = string.Empty;
     }
 
     private async void recDanmuChange(long uid, bool Value)

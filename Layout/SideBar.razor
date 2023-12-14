@@ -1,4 +1,3 @@
-@inject MasaBlazor MasaBlazor
 <MList>
     <MListItem>
         <MListItemAvatar Tile>
@@ -43,27 +42,8 @@
             服务器设置
         </MListItemContent>
     </MListItem>
-    <MSpacer></MSpacer>
-    <MListItem Class="ms-1" OnClick="ColorChange">
-        <MListItemIcon>
-            <MIcon Icon=@(IsDark ? "mdi-sun" : "mdi-moon")></MIcon>
-        </MListItemIcon>
-        <MListItemContent>
-            @(IsDark ? "暗色模式" : "亮色模式")
-        </MListItemContent>
-    </MListItem>
 </MList>
 
 @code {
-    private bool IsDark = false;
-    protected override Task OnInitializedAsync()
-    {
-        IsDark = MasaBlazor?.Theme?.Dark ?? false;
-        return base.OnInitializedAsync();
-    }
-    private void ColorChange()
-    {
-        IsDark = !IsDark;
-        MasaBlazor.ToggleTheme();
-    }
+
 }

@@ -1,5 +1,171 @@
 @page "/Rooms/{ID}"
-<p>@Id</p>
+@inject IPopupService PopupService
+
+<p class="d-flex d-md-inline-flex justify-center justify-md-start">@Id 的房间细节</p>
+<div class="d-flex d-md-inline-flex justify-md-end justify-center">
+    <MButton Outlined Text Color="error" OnClick=@(()=>delroom())>删除房间</MButton>
+</div>
+<div class="mx-1 align-center justify-center">
+    <MSwitch Class="mx-1 align-center d-flex d-md-none" @bind-Value=room.IsAutoRec
+        OnChange="(bool i)=>autoRecChange(room.uid,i)">
+        <LabelContent>
+            <span class="mx-1">自动录制</span>
+        </LabelContent>
+    </MSwitch>
+</div>
+<div class="mx-1 align-center justify-center">
+    <MSwitch Class="mx-1 align-center d-flex d-md-none" @bind-Value=room.IsRecDanmu
+        OnChange="(bool i)=>recDanmuChange(room.uid,i)" Disabled=!room.IsAutoRec>
+        <LabelContent>
+            <span class="mx-1">录制弹幕</span>
+        </LabelContent>
+    </MSwitch>
+</div>
+<div class="d-flex flex-column flex-md-row">
+    <MDescriptions Vertical Bordered Class="ma-2 d-flex d-md-inline-flex">
+        <MDescriptionsItem Label="UID">@room.uid </MDescriptionsItem>
+        <MDescriptionsItem Label="直播间号" Span="2">
+            @(
+                room.room_id.ToString() +
+                (
+                room.short_id != 0
+                ? ('(' + room.short_id.ToString() + ')')
+                : string.Empty
+                )
+                )
+        </MDescriptionsItem>
+        <MDescriptionsItem Label="分区（分区号）">@room.area_name (@room.area)</MDescriptionsItem>
+        <MDescriptionsItem Label="二级分区" Span="2">@room.area_v2_parent_name / @room.area_v2_name
+        </MDescriptionsItem>
+        <MDescriptionsItem Label="轮播状态">@(room.roundStatus == 0 ? "未轮播" : "正在轮播")
+        </MDescriptionsItem>
+        <MDescriptionsItem Label="等级">@room.level</MDescriptionsItem>
+        <MDescriptionsItem Label="关注数">@room.attention</MDescriptionsItem>
+        <MDescriptionsItem Label="房间描述" Span="3">@room.description</MDescriptionsItem>
+        <MDescriptionsItem Label="个人描述" Span="3">@room.sign</MDescriptionsItem>
+    </MDescriptions>
+    <div class="d-flex d-md-inline-flex flex-column">
+        @if (room.DownloadedFileInfo?.AfterRepairFiles != null &&
+        room?.DownloadedFileInfo?.AfterRepairFiles.Count != 0)
+        {
+            <MCardTitle>上次的下载记录</MCardTitle>
+            <MList Class="ma-2">
+                <MListItemTitle>上次的下载记录</MListItemTitle>
+                @foreach (var log in room.DownloadedFileInfo.AfterRepairFiles)
+                {
+                    <MListItem>
+                        <MListItemTitle>
+                            第
+                            @(room.DownloadedFileInfo.AfterRepairFiles.IndexOf(log))
+                            个文件:
+                            @(log.Name)
+                        </MListItemTitle>
+                        <MListItemContent>
+                            创建时间：
+                            @(log.CreationTime.ToString())
+                        </MListItemContent>
+                    </MListItem>
+                }
+            </MList>
+        }
+        else
+        {
+            <MCardTitle Class="d-flex">无上次的下载记录</MCardTitle>
+        }
+        @if (room.DownloadedLog != null && room.DownloadedLog?.Count != 0)
+        {
+            <MCardTitle>下载记录</MCardTitle>
+            <MList Class="ma-2">
+                <MListItemTitle>下载记录</MListItemTitle>
+                @foreach (var log in room.DownloadedLog)
+                {
+                    <MListItem>
+                        <MListItemTitle>
+                            第
+                            @(room.DownloadedLog.IndexOf(log))
+                            个记录，标题：
+                            @(log.Title)
+                        </MListItemTitle>
+                        <MListItemSubtitle>
+                            记录结束时间：
+                            @(log.EndTime)
+                        </MListItemSubtitle>
+                        <MListItemContent>
+                            共
+                            @(log.TotalDownloadCount / 8589934592)
+                            MB
+                        </MListItemContent>
+                    </MListItem>
+                }
+            </MList>
+        }
+        else
+        {
+            <MCardTitle Class="d-flex">无下载记录</MCardTitle>
+        }
+    </div>
+</div>
+
 @code {
     [Parameter] public string Id { get; set; } = string.Empty;
+    private DDTVServer.RoomDetail room = new();
+
+    private async void delroom()
+    {
+#if !DEBUG
+        try
+        {
+#endif
+            var i = await AppEnv.Dserver.DelRoom(room.uid);
+            if (i.code == DDTVServer.Code.Success)
+            {
+                await PopupService.EnqueueSnackbarAsync(i.data, AlertTypes.Success);
+            }
+#if !DEBUG
+        }
+        catch (Exception ex)
+        {
+            await PopupService.EnqueueSnackbarAsync(ex.Message, AlertTypes.Error);
+        }
+#endif
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        room = AppEnv.RoomDetails.First(i => i.uid.ToString() == Id);
+    }
+    private async void autoRecChange(long uid, bool Value)
+    {
+#if !DEBUG
+        try
+        {
+#endif
+            var i = await AppEnv.Dserver.SetAutoRec(uid, Value);
+            await PopupService.EnqueueSnackbarAsync(new SnackbarOptions(i.data, AlertTypes.Success));
+#if !DEBUG
+        }
+        catch (Exception ex)
+        {
+            await PopupService.EnqueueSnackbarAsync(new SnackbarOptions($"出现错误\n{ex.Message}\n{ex}", AlertTypes.Success));
+        }
+#endif
+    }
+
+    private async void recDanmuChange(long uid, bool Value)
+    {
+#if !DEBUG
+        try
+        {
+#endif
+            var i = await AppEnv.Dserver.SetRecDanmu(uid, Value);
+            StateHasChanged();
+            await PopupService.EnqueueSnackbarAsync(new SnackbarOptions(i.data, AlertTypes.Success));
+#if !DEBUG
+        }
+        catch (Exception ex)
+        {
+            await PopupService.EnqueueSnackbarAsync(new SnackbarOptions($"出现错误\n{ex.Message}\n{ex}", AlertTypes.Success));
+        }
+#endif
+    }
+
 }
